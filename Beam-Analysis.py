@@ -57,7 +57,11 @@ def main(identifier, timestamps, frequencies, chnno_to_feeds, remove_seconds):
             plot_gaussians(fit.times, avg, fit.fits, cwd+'/Gaussians/'+string(bl))
             #TODO: make error text file
             #TODO: make fwhm plots
+
     # Second step is to analyze the data for characteristics and then make the maps for them.
+
+def plot_fwhm(cwd,fits,bl):
+    
 
 def plot_gaussians(times, msrd, fit, filepath,baseline):
     median=get_median_frequencies()
