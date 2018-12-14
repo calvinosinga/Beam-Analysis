@@ -10,11 +10,6 @@ This file automates the process of analyzing a beam. It fits a Gaussian to the d
 data with the fit, plots and fits a line to the full width half maximum versus frequency plots, categorizes the baseline
 into "good" and "bad" baselines, ...
 """
-class Baseline:
-    def __init__(self):
-        """
-        Constructs a baseline object that will contain information on its characteristics.
-        """
 
 def main(identifier, timestamps, frequencies, chnno_to_feeds, remove_seconds):
     """
@@ -60,8 +55,8 @@ def main(identifier, timestamps, frequencies, chnno_to_feeds, remove_seconds):
 
     # Second step is to analyze the data for characteristics and then make the maps for them.
 
-def plot_fwhm(cwd,fits,bl):
-    
+def plot_fwhm():
+    print('done')
 
 def plot_gaussians(times, msrd, fit, filepath,baseline):
     median=get_median_frequencies()
