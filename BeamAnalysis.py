@@ -11,7 +11,7 @@ data with the fit, plots and fits a line to the full width half maximum versus f
 into "good" and "bad" baselines, ...
 """
 
-def main(identifier, timestamps, frequencies, chnno_to_feeds, remove_seconds):
+def main(cwd, identifier, timestamps, frequencies, chnno_to_feeds, remove_seconds):
     """
     Main runs the program that does the beam analysis. identifier is a String that is the unique identifier for data
     taken on a specific source. (in the case of the M1 2018 data it was 3srcNP). timestamps is a list of hours for the
@@ -21,14 +21,16 @@ def main(identifier, timestamps, frequencies, chnno_to_feeds, remove_seconds):
     a list of the seconds that should be removed, in order to isolate the beam (remove calibration and extraneous data)
     """
     # First step is to create the gaussian and fwhm plots and save them to text files.
-    cwd = setup()
+    setup(cwd)
+    error_stream = ''
     available_baselines = [] #keeps track of which baselines have files for vis vals
     for bl in range(1,528):
         print(bl) #helps keep track of how far program has run
         try:
-            ampl = get(cwd, identifier, timestamps, bl)
-        except FileNotFoundError:
+            ampl = get(cwd, identifier, timestamps, bl, remove_seconds)
+        except IOError:
             #the baseline either wasn't found, or wasn't supposed to be analyzed
+            error_stream += 'Baseline '+ str(bl) + ' was not found \n'
         else: #I think the else block only runs if except doesn't
             available_baselines.append(bl)
             #trying to remove calibrations
@@ -37,19 +39,20 @@ def main(identifier, timestamps, frequencies, chnno_to_feeds, remove_seconds):
                 if pt not in remove_seconds:
                     temp.append(ampl[pt])
             ampl = temp
-
             #this averages the visibilities in bins of 20 frequencies.
-            avg = avg_frequencies(ampl)
+            avg = avg_frequencies(ampl,frequencies)
+
             median = get_median_frequencies(frequencies)
-            os.mkdir(cwd+'/Gaussians/'+string(bl))
-            fit = fit_data(avg, remove_seconds)
-            outfile = open(cwd+'/Gaussians/'+string(bl)+'/gaussians'+string(bl), 'w')
+            if not os.path.exists(cwd+'/Gaussians/'+str(bl)):
+                os.mkdir(cwd+'/Gaussians/'+str(bl))
+            fits,gaussians,errors,times = fit_data(avg, remove_seconds,median)
+            outfile = open(cwd+'/Gaussians/'+str(bl)+'/gaussians'+str(bl), 'w')
             #this is the file to write the baselines gaussian data in.
             #TODO: finish the explanation of what the numbers mean
             outfile.write(unicode('a*np.exp((-((x-b)/c)**2)/2.0)+d... the numbers are a,b,c,d,' + '\n'))
-            for g in fit.gaussians:
-                outfile.write(unicode(string(g[0])+' '+string(g[1])+' '+string(g[2])+' '+string(g[3])+'\n'))
-            plot_gaussians(fit.times, avg, fit.fits, cwd+'/Gaussians/'+string(bl))
+            for g in gaussians:
+                outfile.write(unicode(str(g[0])+' '+str(g[1])+' '+str(g[2])+' '+str(g[3])+'\n'))
+            plot_gaussians(times, avg, fits, cwd+'/Gaussians/'+str(bl), bl,median)
             #TODO: make error text file
             #TODO: make fwhm plots
 
@@ -58,19 +61,21 @@ def main(identifier, timestamps, frequencies, chnno_to_feeds, remove_seconds):
 def plot_fwhm():
     print('done')
 
-def plot_gaussians(times, msrd, fit, filepath,baseline):
-    median=get_median_frequencies()
+def plot_gaussians(times, msrd, fit, filepath, baseline, median_frequencies):
+    median=median_frequencies
+    #something going wrong with the indices
     for x in range(len(msrd)):
         plt.plot(times,msrd[x], label='Measured Signal')
         plt.xlabel('Time (seconds)')
         plt.ylabel('Visibility')
-        plt.plot(times, fit[x], label='Fitted Data')
+        if fit[x]!=[0,0,0,0]:
+            plt.plot(times, fit[x], label='Fitted Data')
         plt.legend()
-        plt.savefig(filepath+'/'+string(baseline)+'_'+string(median[x])+'MHz')
+        plt.savefig(filepath+'/'+str(baseline)+'_'+str(median[x])+'MHz.png')
         plt.gcf().clear()
         plt.clf()
 
-def fit_data(data, remove_seconds):
+def fit_data(data, remove_seconds, median_frequencies):
     """
     Takes the data, and returns both the gaussian, and the fitted points for the gaussian.
     """
@@ -81,18 +86,16 @@ def fit_data(data, remove_seconds):
     times = []
     errors = [] #if optimize could not find a fit, this list will keep track of itself.
     for i in range(len(data[1])):
-        if i not in remove_seconds:
-            times.append(i)
+        times.append(i)
     n=0
-    median=get_median_frequencies()
-    for fr in avg:
+    median=median_frequencies
+    for fr in data:#i think data
         try:
-            result = optimize.curve_fit(gaussian, times, fr, p0=initial)
+            params,_ = optimize.curve_fit(gaussian, times, fr, p0=initial)
         except RuntimeError:
             errors.append(median[n])
             gaussians.append([0,0,0,0]) #any flat lines would indicate an issue
         else:
-            params=result.popt
             gaussians.append(params)
             fitted_data=[]
             for t in times:
@@ -138,19 +141,20 @@ def get_frequency(data, index):
         amp.append(second[index])
     return amp
 
-def setup():
+def setup(basepath):
     """
     This method sets up the current working directory so that the output is organized as intended.
     """
-    basepath = os.getcwd()
+
     # this makes the directories FWHM, Gaussians, Maps
-    os.mkdir(basepath + '/FWHM')
-    os.mkdir(basepath+'/Gaussians')
-    os.mkdir(basepath + '/Maps')
+    if not os.path.exists(basepath+'/FWHM'):
+        os.mkdir(basepath + '/FWHM')
+        os.mkdir(basepath+'/Gaussians')
+        os.mkdir(basepath + '/Maps')
     return basepath
 
 
-def get(cwd, idf, timestamps, chnno):
+def get(cwd, idf, timestamps, chnno,remove_seconds):
     """
     Returns the amplitudes for all the hours of the specified baseline.
     """
@@ -170,6 +174,7 @@ def get(cwd, idf, timestamps, chnno):
             amp = np.sqrt(imag[row][col]**2 + real[row][col]**2)
             amp_for_one_second.append(amp)
         amplitude.append(amp_for_one_second)
+
     return amplitude
 
 def baseline_to_feeds(cwd):
@@ -201,7 +206,7 @@ def get_data_from_file(cwd, idf, start, stop, chnno, i_or_r ):
     Returns data as a double array, first index is the second(time) the second is the frequency.
     """
 
-    path=cwd+'/visibilities/'+i_or_r.capitalize()+'_'+idf+'_'+start+'_'+stop+'.txt'
+    path=cwd+'/visibilities/'+i_or_r.capitalize()+'_'+ str(chnno)+'_'+idf+'_'+start+'_'+stop+'.txt'
     f = open(path, 'r')
     # if file isn't found, this method should end here
     lines = list(f)
