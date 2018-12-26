@@ -79,8 +79,7 @@ def fit_data(data, remove_seconds, median_frequencies):
     """
     Takes the data, and returns both the gaussian, and the fitted points for the gaussian.
     """
-    initial = [4.0,3550.0,450,40] #is there a way to write this such that its not hard coded
-
+    bound = [[0,0,0,-np.inf],[np.inf, 100000.0,100000.0,np.inf]] #no initial points works well
     fits =[] #keeps the data points for the fits
     gaussians = [] #keeps the parameters for the gaussians
     times = []
@@ -91,24 +90,24 @@ def fit_data(data, remove_seconds, median_frequencies):
     median=median_frequencies
     for fr in data:#i think data
         try:
-            params,_ = optimize.curve_fit(gaussian, times, fr, p0=initial)
+            params,_ = optimize.curve_fit(gaussian, times, fr,bounds=bound)
         except RuntimeError:
             errors.append(median[n])
-            gaussians.append([0,0,0,0]) #any flat lines would indicate an issue
-        else:
+            #any flat lines would indicate an issue
+            params = [0,0,1,0] #the one prevents a divide by zero error
+        finally:
             gaussians.append(params)
             fitted_data=[]
             for t in times:
                 fitted_data.append(gaussian(t,params[0],params[1],params[2],params[3]))
             fits.append(fitted_data)
-        finally:
             n+=1
     return fits,gaussians,errors,times
 
 def get_median_frequencies(frequencies):
     median = []
     for x in range(6,len(frequencies)-20,20): #test if stop is correct
-        median.append(frequencies[x])
+        median.append(int(frequencies[x]))
     return median
 
 def avg_frequencies(data, freq_list):
@@ -196,7 +195,7 @@ def baseline_to_feeds(cwd):
         Chnnos.append(lines[val])
     return feeds,Chnnos
 
-def get_data_from_file(cwd, idf, start, stop, chnno, i_or_r ):
+def get_data_from_file(cwd, idf, start, stop, chnno, i_or_r):
     """
     This is a helper method for get(...) that returns the values in one specific file, which is specified by the parameters of the
     method. Baseline is a string or integer in the ChnNo form (see Santanu's ChnNo->Baseline file). hour is an integer
