@@ -24,6 +24,8 @@ def main(cwd, identifier, timestamps, frequencies, chnno_to_feeds, remove_second
     setup(cwd)
     error_stream = ''
     available_baselines = [] #keeps track of which baselines have files for vis vals
+    fwhmfile = open(cwd+'/FWHM/fwhm_analysis.txt', 'w') # here I write the fwhm pvals and analysis
+    outstring = '' #this keeps track of the fwhm analysis information
     for bl in range(1,528):
         print(bl) #helps keep track of how far program has run
         try:
@@ -53,13 +55,39 @@ def main(cwd, identifier, timestamps, frequencies, chnno_to_feeds, remove_second
             for g in gaussians:
                 outfile.write(unicode(str(g[0])+' '+str(g[1])+' '+str(g[2])+' '+str(g[3])+'\n'))
             plot_gaussians(times, avg, fits, cwd+'/Gaussians/'+str(bl), bl,median)
+            outstring = outstring + plot_fwhm(cwd, bl, gaussians, median)
+
             #TODO: make error text file
             #TODO: make fwhm plots
-
+    # here I write the fwhm information
+    fwhmfile.write(unicode(outstring))
     # Second step is to analyze the data for characteristics and then make the maps for them.
 
-def plot_fwhm():
-    print('done')
+def plot_fwhm(cwd, bl, gaussians, freqindex):
+    """
+    Plots the fwhm values for a baseline in seconds, saving it to the FWHM folder.
+    """
+    #TODO: convert from seconds to degrees
+    filename = cwd+'/FWHM/'+str(bl)
+    #I write the output file for the chi squared info outside of this method
+    fwhms = []
+    for frequency in gaussians:
+        fwhms.append(frequency[2]*2* np.sqrt(2 * np.log1p(2)))
+    plt.clf()
+    plt.scatter(freqindex, fwhms)
+    params, _ = optimize.curve_fit(line, freqindex, fwhms)
+    fitline = []
+    for fr in freqindex:
+        fitline.append(line(fr,params[0], params[1]))
+    plt.plot(freqindex, fitline, label = 'y='+ str(params[0]) + 'x+' + str(params[1]))
+    chisq, pval = stats.chisquare(fwhms, fitline)
+    plt.legend()
+    plt.xlabel('Frequency (MHz)')
+    plt.ylabel('Time (seconds)')
+    plt.savefig(filename)
+    outstring = str(bl)+' '+str(params[0])+' '+str(params[1])+' '+str(chisq)+' '+str(pval)+'\n'
+    return outstring
+
 
 def plot_gaussians(times, msrd, fit, filepath, baseline, median_frequencies):
     median=median_frequencies
