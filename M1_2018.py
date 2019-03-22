@@ -2,7 +2,7 @@ import BeamAnalysis
 import numpy as np
 def get_seconds_to_remove():
     """
-    Returns seconds that are either extraneous data to the signal in question or are calibration seconds.
+    Returns seconds that are either extraneous data to the M1 signal
     """
     cal = []
 
@@ -24,5 +24,4 @@ def frequencies():
 timestamps = ['20180101234415','20180102004415', '20180102014415']
 
 
-# add declination input
-BeamAnalysis.main('C:/Python/BeamAnalysis','3srcNP', timestamps, frequencies(), 200,np.radians(22.01444),get_seconds_to_remove())
+BeamAnalysis.main('C:/Python/BeamAnalysis','3srcNP', timestamps, frequencies(), 100,np.radians(22.01444),get_seconds_to_remove())

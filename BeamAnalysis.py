@@ -79,7 +79,7 @@ def main(cwd, identifier, timestamps, frequencies, calibration_min, declination,
                 os.mkdir(cwd+'/Gaussians/'+str(bl))
             fits,gaussians,errors = fit_data(avg,median,degrees)
             for e in errors:
-                error_stream+='Python could not get fit for baseline' +str(bl)+', frequency:' +str(e)
+                error_stream+=' Python could not get fit for baseline ' +str(bl)+', frequency: ' +str(e)+'\n'
             outfile = open(cwd+'/Gaussians/'+str(bl)+'/gaussians'+str(bl), 'w')
             #this is the file to write the baselines gaussian data in.
             outfile.write(unicode('a*np.exp((-((x-b)/c)**2)/2.0)+d... the numbers are a,b,c,d,' + '\n'))
@@ -90,11 +90,13 @@ def main(cwd, identifier, timestamps, frequencies, calibration_min, declination,
             fwhminfo,fwhmpval = plot_fwhm(cwd, bl, gaussians, median)
             outstring = outstring + fwhminfo
             pvals.append([bl,fwhmpval]) #I add the bl number so I know what the pval corresponds to 
-            if np.sum(avg) > 1.0:
+            if np.sum(avg) < .001:
                 deadlist.append(bl)
+            
  
     # here I write the fwhm information in a text file
     fwhmfile.write(unicode(outstring))
+    print(deadlist)
     # Second step is to analyze the data for characteristics and then make the maps for them.
     bllist = []
     for pv in pvals:
@@ -205,6 +207,7 @@ def make_map(feedlist, cwd, plotname):
         new_im.save(cwd+'/Maps/'+plotname+'.png')
     else:
         new_im.save(cwd+'/'+plotname+'.png')
+    plt.clf()
 
         
 
