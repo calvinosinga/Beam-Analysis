@@ -18,7 +18,7 @@ data with the fit, plots and fits a line to the full width half maximum versus f
 into "good" and "bad" baselines, ...
 """
 
-def main(cwd, identifier, timestamps, frequencies, calibration_min, declination,remove_seconds=[]):
+def main(cwd, identifier, timestamps, frequencies, declination,remove_seconds=[]):
     """
     Main runs the program that does the beam analysis. identifier is a String that is the unique identifier for data
     taken on a specific source. (in the case of the M1 2018 data it was 3srcNP). timestamps is a list of hours for the
@@ -29,6 +29,7 @@ def main(cwd, identifier, timestamps, frequencies, calibration_min, declination,
     """
     # First step is to create the gaussian and fwhm plots and save them to text files.
     setup(cwd)
+    calibration_min = 100
     deadlist = [] # keeps track of dead baselines
     error_stream = ''
     fwhmfile = open(cwd+'/FWHM/fwhm_analysis.txt', 'w') # here I write the fwhm pvals and analysis

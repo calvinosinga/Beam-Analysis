@@ -24,4 +24,4 @@ def frequencies():
 timestamps = ['20180101234415','20180102004415', '20180102014415']
 
 
-BeamAnalysis.main('C:/Python/BeamAnalysis','3srcNP', timestamps, frequencies(), 100,np.radians(22.01444),get_seconds_to_remove())
+BeamAnalysis.main('C:/Python/BeamAnalysis','3srcNP', timestamps, frequencies(),np.radians(22.01444),get_seconds_to_remove())
