@@ -10,7 +10,6 @@ from PIL import Image
 
 #TODO: add fwhm plots to maps
 # for presentation present possible issues, suggestions on fixing them.
-# make map for dead feeds
 # make map for weak signals
 """
 This file automates the process of analyzing a beam. It fits a Gaussian to the data, plots and saves the visibility
@@ -209,8 +208,6 @@ def make_map(feedlist, cwd, plotname):
     else:
         new_im.save(cwd+'/'+plotname+'.png')
     plt.clf()
-
-        
 
 def plot_ir(filepath, times, imag, real, median_frequencies):
     median= median_frequencies
