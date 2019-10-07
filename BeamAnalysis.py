@@ -7,7 +7,7 @@ import os
 from  matplotlib import colors as mcolors
 from PIL import Image
 
-
+#change
 #TODO: add fwhm plots to maps
 # for presentation present possible issues, suggestions on fixing them.
 # make map for weak signals
